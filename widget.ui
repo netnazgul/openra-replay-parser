@@ -17,14 +17,14 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QPushButton" name="buttonParse">
+      <widget class="QPushButton" name="buttonParseFile">
        <property name="text">
         <string>Single file</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="buttonParseFolder">
        <property name="text">
         <string>Folder</string>
        </property>
@@ -46,39 +46,56 @@
     </layout>
    </item>
    <item>
-    <widget class="QTableWidget" name="tableOutput">
-     <property name="sortingEnabled">
-      <bool>true</bool>
-     </property>
-     <attribute name="horizontalHeaderCascadingSectionResizes">
-      <bool>false</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string>Filename</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Timestamp</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Map</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Winner</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Loser</string>
-      </property>
-     </column>
-    </widget>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QTableWidget" name="tableOutput">
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
+       <column>
+        <property name="text">
+         <string>Filename</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Timestamp</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Map</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Winner</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Loser</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+     <item>
+      <widget class="QProgressBar" name="progressBar">
+       <property name="maximum">
+        <number>0</number>
+       </property>
+       <property name="value">
+        <number>0</number>
+       </property>
+       <property name="invertedAppearance">
+        <bool>false</bool>
+       </property>
+       <property name="format">
+        <string>%p%</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

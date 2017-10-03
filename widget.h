@@ -16,9 +16,9 @@ public:
     ~Widget();
 
 private slots:
-    void on_buttonParse_clicked();
+    void on_buttonParseFile_clicked();
 
-    void on_pushButton_clicked();
+    void on_buttonParseFolder_clicked();
 
 private:
     Ui::Widget *ui;
