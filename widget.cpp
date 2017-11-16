@@ -210,8 +210,6 @@ void Widget::on_buttonParseFile_clicked()
 
 void Widget::on_buttonParseFolder_clicked()
 {
-/*    ui->tableOutput->clearContents();
-    ui->tableOutput->setRowCount(0);*/
 
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
                                                 "",
@@ -248,11 +246,6 @@ void Widget::on_buttonParseFolder_clicked()
     QMap<QString, int> faction_wincount;
     QMap<QTime, replay_struct> duration_map;
 
-//    replay_map.clear();
-//    map_count.clear();
-//    faction_count.clear();
-//    faction_wincount.clear();
-//    duration_map.clear();
     QDateTime total_duration = QDateTime::fromMSecsSinceEpoch(0,QTimeZone(0));
     QTime average_duration = QTime::fromMSecsSinceStartOfDay(0);
 
@@ -304,6 +297,9 @@ void Widget::on_buttonParseFolder_clicked()
         i++;
     }
 
+    ui->tableOutput->resizeColumnsToContents();
+    ui->tableOutput->setSortingEnabled(true);
+
     average_duration = QTime::fromMSecsSinceStartOfDay(total_duration.toMSecsSinceEpoch()/replay_map.size());
 
     // stats crunch
@@ -315,20 +311,42 @@ void Widget::on_buttonParseFolder_clicked()
     ui->listStats->addItem(QString("Average game duration: %1").arg(average_duration.toString("HH:mm:ss")));
     ui->listStats->addItem(QString("Shortest game: %1 (%2)").arg(duration_map.firstKey().toString("HH:mm:ss")).arg(duration_map.first().name));
     ui->listStats->addItem(QString("Longest game: %1 (%2)").arg(duration_map.lastKey().toString("HH:mm:ss")).arg(duration_map.last().name));
-    ui->listStats->addItem("");
-    for (auto it = map_count.begin(); it != map_count.end(); it++)
-        ui->listStats->addItem(QString("Map \"%1\" played %2 times (%4%)")
-                               .arg(it.key())
-                               .arg(it.value())
-                               .arg(100.0*it.value()/replay_map.size()));
-    ui->listStats->addItem("");
-    for (auto it = faction_count.begin(); it != faction_count.end(); it++)
-        ui->listStats->addItem(QString("Faction \"%1\" used %2 times, won %3 (%4%)")
-                               .arg(it.key())
-                               .arg(it.value())
-                               .arg(faction_wincount[it.key()])
-                               .arg(100.0*faction_wincount[it.key()]/it.value()));
 
-    ui->tableOutput->resizeColumnsToContents();
-    ui->tableOutput->setSortingEnabled(true);
+    // map stats table
+    ui->tableMaps->clearContents();
+    ui->tableMaps->setRowCount(0);
+    ui->tableMaps->setSortingEnabled(false);
+    i = 0;
+    for (auto it = map_count.begin(); it != map_count.end(); it++)
+    {
+        ui->tableMaps->insertRow(i);
+
+        ui->tableMaps->setItem(i,0,new QTableWidgetItem(it.key()));
+        ui->tableMaps->setItem(i,1,new QTableWidgetItem(QString("%1 (%2%)")
+                                                        .arg(it.value())
+                                                        .arg(100.0*it.value()/replay_map.size())));
+        i++;
+    }
+    ui->tableMaps->resizeColumnsToContents();
+    ui->tableMaps->setSortingEnabled(true);
+
+    // faction stats table
+    ui->tableFactions->clearContents();
+    ui->tableFactions->setRowCount(0);
+    ui->tableFactions->setSortingEnabled(false);
+    i = 0;
+    for (auto it = faction_count.begin(); it != faction_count.end(); it++)
+    {
+        ui->tableFactions->insertRow(i);
+
+        ui->tableFactions->setItem(i,0,new QTableWidgetItem(it.key()));
+        ui->tableFactions->setItem(i,1,new QTableWidgetItem(QString("%1").arg(it.value())));
+        ui->tableFactions->setItem(i,2,new QTableWidgetItem(QString("%1 (%2%)")
+                                                        .arg(faction_wincount[it.key()])
+                                                        .arg(100.0*faction_wincount[it.key()]/it.value())));
+        i++;
+    }
+    ui->tableFactions->resizeColumnsToContents();
+    ui->tableFactions->setSortingEnabled(true);
+
 }
