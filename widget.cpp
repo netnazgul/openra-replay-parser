@@ -322,9 +322,14 @@ void Widget::on_buttonParseFolder_clicked()
         ui->tableMaps->insertRow(i);
 
         ui->tableMaps->setItem(i,0,new QTableWidgetItem(it.key()));
-        ui->tableMaps->setItem(i,1,new QTableWidgetItem(QString("%1 (%2%)")
-                                                        .arg(it.value())
-                                                        .arg(100.0*it.value()/replay_map.size())));
+
+        QTableWidgetItem* map_ucnt = new QTableWidgetItem;
+        map_ucnt->setData(Qt::DisplayRole,it.value());
+        ui->tableMaps->setItem(i,1,map_ucnt);
+
+        QTableWidgetItem* map_percentage = new QTableWidgetItem;
+        map_percentage->setData(Qt::DisplayRole, 100.0*it.value()/replay_map.size() );
+        ui->tableMaps->setItem(i,2,map_percentage);
         i++;
     }
     ui->tableMaps->resizeColumnsToContents();
@@ -340,10 +345,18 @@ void Widget::on_buttonParseFolder_clicked()
         ui->tableFactions->insertRow(i);
 
         ui->tableFactions->setItem(i,0,new QTableWidgetItem(it.key()));
-        ui->tableFactions->setItem(i,1,new QTableWidgetItem(QString("%1").arg(it.value())));
-        ui->tableFactions->setItem(i,2,new QTableWidgetItem(QString("%1 (%2%)")
-                                                        .arg(faction_wincount[it.key()])
-                                                        .arg(100.0*faction_wincount[it.key()]/it.value())));
+
+        QTableWidgetItem* faction_used = new QTableWidgetItem;
+        faction_used->setData(Qt::DisplayRole,it.value());
+        ui->tableFactions->setItem(i,1,faction_used);
+
+        QTableWidgetItem* faction_won = new QTableWidgetItem;
+        faction_won->setData(Qt::DisplayRole,faction_wincount[it.key()]);
+        ui->tableFactions->setItem(i,2,faction_won);
+
+        QTableWidgetItem* faction_percentage = new QTableWidgetItem;
+        faction_percentage->setData(Qt::DisplayRole,100.0*faction_wincount[it.key()]/it.value());
+        ui->tableFactions->setItem(i,3,faction_percentage);
         i++;
     }
     ui->tableFactions->resizeColumnsToContents();

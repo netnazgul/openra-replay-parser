@@ -175,10 +175,10 @@
             <bool>true</bool>
            </property>
            <property name="columnCount">
-            <number>3</number>
+            <number>4</number>
            </property>
            <attribute name="horizontalHeaderDefaultSectionSize">
-            <number>200</number>
+            <number>150</number>
            </attribute>
            <attribute name="horizontalHeaderStretchLastSection">
             <bool>false</bool>
@@ -191,6 +191,11 @@
            <column>
             <property name="text">
              <string>Played</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Played %</string>
             </property>
            </column>
            <column>
@@ -228,10 +233,10 @@
             <bool>true</bool>
            </property>
            <property name="columnCount">
-            <number>3</number>
+            <number>4</number>
            </property>
            <attribute name="horizontalHeaderDefaultSectionSize">
-            <number>200</number>
+            <number>150</number>
            </attribute>
            <column>
             <property name="text">
@@ -246,6 +251,11 @@
            <column>
             <property name="text">
              <string>Won</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Won %</string>
             </property>
            </column>
           </widget>
