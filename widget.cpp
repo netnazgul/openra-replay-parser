@@ -9,21 +9,51 @@
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QMap>
+#include <QDateTime>
+#include <QTimeZone>
+
+struct player_struct{
+    QString name;
+    int random_faction;
+    QString faction;
+    int outcome;
+};
 
 struct replay_struct{
     QString filename;
     QString name;
     QString timestamp;
+    QString timestamp2;
     QString map;
-    QString winner;
-    QString loser;
+    player_struct player[2];
+    QString winner() {
+        if (player[0].outcome == 1)
+            return player[0].name;
+
+        if (player[1].outcome == 1)
+            return player[1].name;
+
+        return "-";
+    }
+    QString loser() {
+        if (player[0].outcome == 0)
+            return player[0].name;
+
+        if (player[1].outcome == 0)
+            return player[1].name;
+
+        return "-";
+    }
+
+    QTime duration() {
+        QDateTime ts = QDateTime::fromString(timestamp,"yyyy-MM-dd HH-mm-ss");
+        QDateTime ts2 = QDateTime::fromString(timestamp2,"yyyy-MM-dd HH-mm-ss");
+        QTime diff = QTime::fromMSecsSinceStartOfDay(ts.msecsTo(ts2));
+        return diff;
+    }
 } ;
 
-QMap<QString, replay_struct> replay_map;
-
-QPair<QString, int> parse_player_report(QFile& f);
-QString parse_player_name(QFile& f);
-int parse_player_outcome(QFile& f);
+player_struct parse_player_report(QFile& f);
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -37,35 +67,42 @@ Widget::~Widget()
     delete ui;
 }
 
-QPair<QString, int> parse_player_report(QFile &f) {
-    QString player_name = parse_player_name(f);
-    int player_outcome = parse_player_outcome(f);
-    return qMakePair(player_name, player_outcome);
-}
+player_struct parse_player_report(QFile &f) {
+    player_struct p;
+    p.name = "";
+    p.random_faction = -1;
+    p.faction = "";
+    p.outcome = -1;
 
-QString parse_player_name(QFile &f) {
+    // getting name, faction and outcome
     QString input;
     while (!f.atEnd())
     {
         input = f.readLine();
-        if (input.mid(0, 6) == "\tName:") {
-            return input.mid(7).trimmed();
-        }
-    }
 
-    return QString();
-}
+        if (input.mid(0, 6) == "\tName:")
+            p.name = input.mid(7).trimmed();
 
-int parse_player_outcome(QFile &f) {
-    QString input;
-    while (!f.atEnd())
-    {
-        input = f.readLine();
+        if (input.mid(0, 13) == "\tFactionName:")
+            p.faction = input.mid(14).trimmed();
+
+        if (input.mid(0, 17) == "\tIsRandomFaction:")
+            p.random_faction = input.contains("True");
+
         if (input.mid(0, 9) == "\tOutcome:")
-            return input.mid(10).trimmed() == "Won";
+            if (input.contains("Won"))
+                p.outcome = 1;
+            else if (input.contains("Lost"))
+                p.outcome = 0;
+            else
+                p.outcome = 2;
+
+        // exit function when all params are read
+        if (p.name.size() && p.faction.size() && (p.outcome != -1) && (p.random_faction != -1))
+            return p;
     }
 
-    return -1;
+    return p;
 }
 
 bool parse_replay(QString filename, replay_struct& entry)
@@ -80,28 +117,38 @@ bool parse_replay(QString filename, replay_struct& entry)
     entry.filename = filename;
     entry.name = fi.fileName();
     entry.name.chop(7);
+    int i = 0;
 
     while (!file.atEnd()) {
         line = file.readLine();
-        if (line.mid(0, 9) == "\tMapTitle")
+        if (line.mid(0, 10) == "\tMapTitle:")
             entry.map = line.mid(11).trimmed();
 
-        if (line.mid(0,13) == "\tStartTimeUtc")
+        if (line.mid(0,14) == "\tStartTimeUtc:")
             entry.timestamp = line.mid(15).trimmed();
 
-        if (line.mid(0, 6) == "Player")
+        if (line.mid(0,12) == "\tEndTimeUtc:")
+            entry.timestamp2 = line.mid(13).trimmed();
+
+        if (line.mid(0, 7) == "Player@")
         {
-            QPair<QString, int> outcome = parse_player_report(file);
-            if (outcome.second < 0)
+            i = line[7].digitValue();
+
+            player_struct player = parse_player_report(file);
+
+            if (player.outcome < 0)
             {
                 file.close();
                 return false;
             }
 
-            if (!outcome.second)
-                entry.loser = outcome.first;
+            if (i == 0 || i == 1)
+                entry.player[i] = player;
             else
-                entry.winner = outcome.first;
+            {
+                file.close();
+                return false;
+            }
         }
     }
 
@@ -149,11 +196,16 @@ void Widget::on_buttonParseFile_clicked()
     QTableWidgetItem *newItem3 = new QTableWidgetItem(entry.map);
     ui->tableOutput->setItem(0,2,newItem3);
 
-    QTableWidgetItem *newItem4 = new QTableWidgetItem(entry.winner);
+    QTableWidgetItem *newItem4 = new QTableWidgetItem(entry.duration().toString("H:mm:ss"));
     ui->tableOutput->setItem(0,3,newItem4);
 
-    QTableWidgetItem *newItem5 = new QTableWidgetItem(entry.loser);
+    QTableWidgetItem *newItem5 = new QTableWidgetItem(entry.winner());
     ui->tableOutput->setItem(0,4,newItem5);
+
+    QTableWidgetItem *newItem6 = new QTableWidgetItem(entry.loser());
+    ui->tableOutput->setItem(0,5,newItem6);
+
+    ui->tableOutput->resizeColumnsToContents();
 }
 
 void Widget::on_buttonParseFolder_clicked()
@@ -190,6 +242,20 @@ void Widget::on_buttonParseFolder_clicked()
     replay_struct entry;
     int i = 0;
 
+    QMap<QString, replay_struct> replay_map;
+    QMap<QString, int> map_count;
+    QMap<QString, int> faction_count;
+    QMap<QString, int> faction_wincount;
+    QMap<QTime, replay_struct> duration_map;
+
+//    replay_map.clear();
+//    map_count.clear();
+//    faction_count.clear();
+//    faction_wincount.clear();
+//    duration_map.clear();
+    QDateTime total_duration = QDateTime::fromMSecsSinceEpoch(0,QTimeZone(0));
+    QTime average_duration = QTime::fromMSecsSinceStartOfDay(0);
+
     QElapsedTimer timer;
     timer.start();
 
@@ -199,6 +265,9 @@ void Widget::on_buttonParseFolder_clicked()
         {
             qDebug() << i << timer.restart();
             replay_map[entry.filename] = entry;
+            duration_map[entry.duration()] = entry;
+
+            total_duration = total_duration.addMSecs(entry.duration().msecsSinceStartOfDay());
 
             i++;
             ui->progressBar->setValue(i);
@@ -218,12 +287,47 @@ void Widget::on_buttonParseFolder_clicked()
         ui->tableOutput->insertRow(i);
 
         ui->tableOutput->setItem(i,1,new QTableWidgetItem(rmi->timestamp));
-        ui->tableOutput->setItem(i,4,new QTableWidgetItem(rmi->loser));
-        ui->tableOutput->setItem(i,3,new QTableWidgetItem(rmi->winner));
+        ui->tableOutput->setItem(i,5,new QTableWidgetItem(rmi->loser()));
+        ui->tableOutput->setItem(i,4,new QTableWidgetItem(rmi->winner()));
+        ui->tableOutput->setItem(i,3,new QTableWidgetItem(rmi->duration().toString("H:mm:ss")));
         ui->tableOutput->setItem(i,2,new QTableWidgetItem(rmi->map));
         ui->tableOutput->setItem(i,0,new QTableWidgetItem(rmi->name));
+
+        map_count[rmi->map]++;
+        faction_count[rmi->player[0].faction]++;
+        faction_count[rmi->player[1].faction]++;
+        if (rmi->player[0].outcome == 1)
+            faction_wincount[rmi->player[0].faction]++;
+        if (rmi->player[1].outcome == 1)
+            faction_wincount[rmi->player[1].faction]++;
+
         i++;
     }
+
+    average_duration = QTime::fromMSecsSinceStartOfDay(total_duration.toMSecsSinceEpoch()/replay_map.size());
+
+    // stats crunch
+    ui->listStats->clear();
+    ui->listStats->addItem(QString("Total files parsed: %1").arg(count));
+    ui->listStats->addItem(QString("Correct files: %1").arg(replay_map.size()));
+    ui->listStats->addItem("");
+    ui->listStats->addItem(QString("Total files duration: %1").arg(total_duration.toString("HH:mm:ss")));
+    ui->listStats->addItem(QString("Average game duration: %1").arg(average_duration.toString("HH:mm:ss")));
+    ui->listStats->addItem(QString("Shortest game: %1 (%2)").arg(duration_map.firstKey().toString("HH:mm:ss")).arg(duration_map.first().name));
+    ui->listStats->addItem(QString("Longest game: %1 (%2)").arg(duration_map.lastKey().toString("HH:mm:ss")).arg(duration_map.last().name));
+    ui->listStats->addItem("");
+    for (auto it = map_count.begin(); it != map_count.end(); it++)
+        ui->listStats->addItem(QString("Map \"%1\" played %2 times (%4%)")
+                               .arg(it.key())
+                               .arg(it.value())
+                               .arg(100.0*it.value()/replay_map.size()));
+    ui->listStats->addItem("");
+    for (auto it = faction_count.begin(); it != faction_count.end(); it++)
+        ui->listStats->addItem(QString("Faction \"%1\" used %2 times, won %3 (%4%)")
+                               .arg(it.key())
+                               .arg(it.value())
+                               .arg(faction_wincount[it.key()])
+                               .arg(100.0*faction_wincount[it.key()]/it.value()));
 
     ui->tableOutput->resizeColumnsToContents();
     ui->tableOutput->setSortingEnabled(true);
