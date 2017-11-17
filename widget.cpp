@@ -302,12 +302,16 @@ void Widget::on_buttonParseFolder_clicked()
 
     average_duration = QTime::fromMSecsSinceStartOfDay(total_duration.toMSecsSinceEpoch()/replay_map.size());
 
+    int td_sec = (total_duration.toMSecsSinceEpoch() / 1000) % 60;
+    int td_min = (total_duration.toMSecsSinceEpoch() / 60000) % 60;
+    int td_hr = (total_duration.toMSecsSinceEpoch() / 3600000);
+
     // stats crunch
     ui->listStats->clear();
     ui->listStats->addItem(QString("Total files parsed: %1").arg(count));
     ui->listStats->addItem(QString("Correct files: %1").arg(replay_map.size()));
     ui->listStats->addItem("");
-    ui->listStats->addItem(QString("Total files duration: %1").arg(total_duration.toString("HH:mm:ss")));
+    ui->listStats->addItem(QString("Total files duration: %1:%2:%3").arg(td_hr).arg(td_min,2,10,QChar('0')).arg(td_sec,2,10,QChar('0')));
     ui->listStats->addItem(QString("Average game duration: %1").arg(average_duration.toString("HH:mm:ss")));
     ui->listStats->addItem(QString("Shortest game: %1 (%2)").arg(duration_map.firstKey().toString("HH:mm:ss")).arg(duration_map.first().name));
     ui->listStats->addItem(QString("Longest game: %1 (%2)").arg(duration_map.lastKey().toString("HH:mm:ss")).arg(duration_map.last().name));
