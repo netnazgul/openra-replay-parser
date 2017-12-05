@@ -17,6 +17,7 @@ struct player_struct{
     int random_faction;
     QString faction;
     int outcome;
+    QString timestamp;
 };
 
 struct replay_struct{
@@ -73,6 +74,7 @@ player_struct parse_player_report(QFile &f) {
     p.random_faction = -1;
     p.faction = "";
     p.outcome = -1;
+    p.timestamp = "";
 
     // getting name, faction and outcome
     QString input;
@@ -97,8 +99,15 @@ player_struct parse_player_report(QFile &f) {
             else
                 p.outcome = 2;
 
+        if (input.mid(0,21) == "\tOutcomeTimestampUtc:")
+            p.timestamp = input.mid(22).trimmed();
+
         // exit function when all params are read
-        if (p.name.size() && p.faction.size() && (p.outcome != -1) && (p.random_faction != -1))
+        if (p.name.size() &&
+                p.faction.size() &&
+                (p.outcome != -1) &&
+                (p.random_faction != -1) &&
+                (p.timestamp.size()))
             return p;
     }
 
@@ -149,6 +158,9 @@ bool parse_replay(QString filename, replay_struct& entry)
                 file.close();
                 return false;
             }
+
+            if (player.outcome != 2)
+                entry.timestamp2 = player.timestamp;
         }
     }
 
