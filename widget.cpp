@@ -100,7 +100,7 @@ player_struct parse_player_report(QFile &f) {
                 p.outcome = 2;
 
         if (input.mid(0,21) == "\tOutcomeTimestampUtc:")
-            p.timestamp = input.mid(22).trimmed();
+			p.timestamp = input.mid(22,19).trimmed();
 
         // exit function when all params are read
         if (p.name.size() &&
